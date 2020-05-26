@@ -1,0 +1,20 @@
+FROM debian:stretch
+
+RUN apt-get update \
+    && apt-get install -y openssh-server mysql-client awscli \
+    && useradd remote_user \
+    && echo "remote_user:1234" | chpasswd \
+    && mkdir -p ~/.ssh/ /var/run/sshd /home/remote_user/.ssh \
+    && chmod 700 /home/remote_user/.ssh \
+    && touch /home/remote_user/.ssh/authorized_keys \
+    && chmod 600 /home/remote_user/.ssh/authorized_keys \
+    && chown -R remote_user:remote_user /home/remote_user
+
+COPY ./ssh_host/id_rsa.pub . 
+COPY ./ssh_host/loadBackup.sh /var/loadBackup.sh
+RUN cat id_rsa.pub > /home/remote_user/.ssh/authorized_keys \
+    && rm -rf id_rsa.pub
+
+
+EXPOSE 22
+CMD [ "/usr/sbin/sshd", "-D" ]

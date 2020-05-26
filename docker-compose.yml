@@ -1,0 +1,52 @@
+version: "3.7"
+
+networks: 
+  net:
+
+volumes: 
+  mysql_data:
+
+services:
+  jenkins:
+    container_name: jenkins
+    image: jenkins/jenkins:lts
+    ports: 
+      - 8080:8080
+      - 50000:50000
+    restart: on-failure
+    volumes: 
+      - $PWD/jenkins_home:/var/jenkins_home
+    networks: 
+      - net
+  ssh_host:
+    container_name: ssh_host
+    image: jenkins-tutorial/sshhost
+    build: 
+      context: .
+      dockerfile: ssh_host/dockerfile
+    networks: 
+      - net
+    ports:
+      - 22:2222
+    environment: 
+      - MYSQL_ROOT_PASSWORD=$USER
+      - MYSQL_HOST=mysql
+      - MYSQL_DB=db
+      - AWS_BUCKET=jenkins-mysql-backup-cy
+    env_file: 
+      - .env
+  mysql:
+    container_name: mysql
+    image: mysql:5.7
+    environment: 
+      - MYSQL_ROOT_PASSWORD=$USER
+      - MYSQL_DATABASE=db
+    restart: on-failure
+    ports:
+      - 3306:3306
+    volumes: 
+      - type: volume
+        source: mysql_data
+        target: /var/lib/mysql
+    networks: 
+      - net
